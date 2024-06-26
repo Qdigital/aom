@@ -23,7 +23,9 @@ Read the [Spec](https://wicg.github.io/aom/spec/) - note, not up-to-date
 
 [Tic-tac-toe demo](http://wicg.github.io/aom/demos/tictactoe.html) (for Chrome)
 
-## Notification API for Confirmation of Action
+## Accessibility (ARIA) Notification API
+
+**Note notification-api.md is outdated. For the up-to-date explainer of this initiative, please [click here](https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/Accessibility/AriaNotify/explainer.md).**
 
 This effort aims to create a JavaScript API to allow developers to
 initiate notifications that confirm user actions (not necessarily tied 
@@ -31,6 +33,9 @@ to direct UI changes).
 
 ### Editors:
 
+* Sara Tang, Microsoft, sartang@microsoft.com
+* Doug Geoffray, Microsoft, doug.geoffray@microsoft.com
+* Alison Maher, Microsoft, almaher@microsoft.com
 * Travis Leithead, Microsoft, travil@microsoft.com
 * Daniel Libby, Microsoft
 

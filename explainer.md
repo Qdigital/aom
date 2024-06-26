@@ -23,14 +23,14 @@
   - [Default semantics for Custom Elements via the `ElementInternals` object](#default-semantics-for-custom-elements-via-the-elementinternals-object)
     - [Use case 1: Setting non-reflected (“default”) accessibility properties for Web Components](#use-case-1-setting-non-reflected-default-accessibility-properties-for-web-components)
     - [Spec/implementation status](#specimplementation-status-2)
-  - [User action events from Assistive Technology](#user-action-events-from-assistive-technology)
-    - [New InputEvent types](#new-inputevent-types)
+  - [Shipping, Needs Testing: User action events from Assistive Technology](#user-action-events-from-assistive-technology)
+  - [Abandoned: New InputEvent types](#new-inputevent-types)
     - [Use case 3: Listening for events from Assistive Technology](#use-case-3-listening-for-events-from-assistive-technology)
     - [Spec/implementation status](#specimplementation-status-3)
-  - [Virtual Accessibility Nodes](#virtual-accessibility-nodes)
+  - [Speculative, Blocked: Virtual Accessibility Nodes](#virtual-accessibility-nodes)
     - [Use case 4: Adding non-DOM nodes (“virtual nodes”) to the Accessibility tree](#use-case-4-adding-non-dom-nodes-virtual-nodes-to-the-accessibility-tree)
     - [Spec/implementation status](#specimplementation-status-4)
-  - [Full Introspection of an Accessibility Tree - `ComputedAccessibleNode`](#full-introspection-of-an-accessibility-tree---computedaccessiblenode)
+  - [Full Introspection of an Accessibility Tree](#full-introspection-of-an-accessibility-tree)
     - [Use case 5: Introspecting the computed tree](#use-case-5-introspecting-the-computed-tree)
     - [Spec/implementation status](#specimplementation-status-5)
     - [Why is accessing the computed properties being addressed last?](#why-is-accessing-the-computed-properties-being-addressed-last)
@@ -45,9 +45,9 @@
   - [Background: DOM tree, accessibility tree and platform accessibility APIs](#background-dom-tree-accessibility-tree-and-platform-accessibility-apis)
     - [Mapping native HTML to the accessibility tree](#mapping-native-html-to-the-accessibility-tree)
     - [ARIA](#aria)
-  - [Appendix: `AccessibleNode` naming](#appendix-accessiblenode-naming)
-  - [Appendix: Partial proposed IDL for virtual accessibility nodes](#appendix-partial-proposed-idl-for-virtual-accessibility-nodes)
-  - [Appendix: partial proposed IDL for `ComputedAccessibleNode`](#appendix-partial-proposed-idl-for-computedaccessiblenode)
+  - [Abandoned: Appendix: `AccessibleNode` naming](#appendix-accessiblenode-naming)
+  - [Abandoned: Appendix: Partial proposed IDL for virtual accessibility nodes](#appendix-partial-proposed-idl-for-virtual-accessibility-nodes)
+  - [Abandoned: Appendix: partial proposed IDL for `ComputedAccessibleNode`](#appendix-partial-proposed-idl-for-computedaccessiblenode)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -90,8 +90,9 @@ in particular, they are much less expressive than the native APIs that the brows
    - These should be able to express at least the same set of accessible properties as Elements,
      as well as parent/child/other relationships with other virtual nodes,
      and position/dimensions.
-5. Introspecting the computed accessibility tree
+5. Introspecting the computed accessibility tree and interpreted accessibility attributes/properties
    - Developers currently have no way to probe or test how ARIA and other accessible properties are applied.
+   - Browser implementers have no API to automate comparison testing of engine accessibilty internals for interoperability.
 
 ## The Accessibility Object Model
 
@@ -239,6 +240,8 @@ customElements.define("custom-tablist", CustomTabList);
 
 ### User action events from Assistive Technology
 
+(Partially Shipping, [Needs Testing](https://github.com/web-platform-tests/interop-2023-accessibility-testing/issues/66))
+
 To preserve the privacy of assistive technology users, events from assistive technology
 will typically cause a synthesised DOM event to be triggered. The events are determined by
 platform conventions and partially documented in the [ARIA Authoring Practices Guide (APG)](https://www.w3.org/TR/wai-aria-practices/#aria_ex).
@@ -246,30 +249,30 @@ platform conventions and partially documented in the [ARIA Authoring Practices G
 
 | **AT event**          | **Targets**                                                       | Orientation/Direction | **DOM event**                      |
 | --------------------- | ----------------------------------------------------------------- | --------------------- | ---------------------------------- |
-| `click` or `press`    | _all elements_                                                    |                       | `click` MouseEvent                 |
+| `click` or `press`    | _all elements_                                                    |                       | `click` MouseEvent¹                |
 | `focus`               | _all focusable elements_                                          |                       | `focus` Event                      |
 | `blur`                | No targets, as `blur` could potentially 'out' AT users.           |                       | None                               |
-| `select`              | Elements whose computed role supports `aria-selected`             |                       | `click` MouseEvent                 |
-| `dismiss` or `escape` | _all elements_                                                    |                       | `Escape` KeyboardEvent             |
-| `contextMenu`         | _all elements_                                                    |                       | `contextmenu` MouseEvent           |
-| `increment`           | Elements w/ computed role `progressbar`, `scrollbar`, or `slider` | vertical              | `Up` KeyboardEvent                 |
-|                       | ""                                                                | horizontal LTR        | `Right` KeyboardEvent              |
-|                       | ""                                                                | horizontal RTL        | `Left` KeyboardEvent               |
-|                       | Elements w/ computed role `spinbutton`                            | orientation n/a       | `Up` KeyboardEvent                 |
-| `decrement`           | Elements w/ computed role `progressbar`, `scrollbar`, or `slider` | vertical              | `Down` KeyboardEvent               |
-|                       | ""                                                                | horizontal LTR        | `Left` KeyboardEvent               |
-|                       | ""                                                                | horizontal RTL        | `Right` KeyboardEvent              |
-|                       | Elements w/ computed role `spinbutton`                            | orientation n/a       | `Down` KeyboardEvent               |
+| `select`              | Elements whose computed role supports `aria-selected`             |                       | `click` MouseEvent¹                |
+| `contextMenu`         | _all elements_                                                    |                       | `contextmenu` MouseEvent²          |
+| `dismiss` or `escape` | _all elements_                                                    |                       | `Escape` KeyboardEvent³            |
+| `increment`           | Elements w/ computed role `scrollbar`, or `slider`                | vertical              | `Up` KeyboardEvent³                |
+|                       | ""                                                                | horizontal LTR        | `Right` KeyboardEvent³             |
+|                       | ""                                                                | horizontal RTL        | `Left` KeyboardEvent³              |
+|                       | Elements w/ computed role `spinbutton`                            | orientation n/a       | `Up` KeyboardEvent³                |
+| `decrement`           | Elements w/ computed role `scrollbar` or `slider`                 | vertical              | `Down` KeyboardEvent³              |
+|                       | ""                                                                | horizontal LTR        | `Left` KeyboardEvent³              |
+|                       | ""                                                                | horizontal RTL        | `Right` KeyboardEvent³             |
+|                       | Elements w/ computed role `spinbutton`                            | orientation n/a       | `Down` KeyboardEvent³              |
 | `scrollByPage`        | TBD (possibly custom scroll views)                                |                       | TBD (possibly `PageUp`/`PageDown`) |
 | `scrollIntoView`      | TBD                                                               |                       | No equivalent DOM event            |
 | `setValue`            | n/a                                                               |                       | No equivalent DOM event            |
 
 #### Notes on the previous table:
-- DOM KeyboardEvent sequences include keyup/keydown.
-- DOM MouseEvent sequences include mousedown/mouseup and touchstart/touchend where relevant.
-- `contextmenu` sequence may need to include MouseEvents, including `mousedown`/`mouseup`/`auxclick`/`contextmenu`.
+- ¹ `click` sequences include `mousedown`/`mouseup` and `touchstart`/`touchend` where relevant.
+- ² `contextmenu` sequences may need to include MouseEvents, including `mousedown`/`mouseup`/`auxclick`/`contextmenu`.
+- ³ DOM KeyboardEvent sequences include `keyup`/`keydown`.
 - Control orientation is determined by the computed value of `aria-orientation` which
-  defaults to `horizontal` for `progressbar` and `slider`, and defaults to `vertical` for
+  defaults to `horizontal` for `slider`, and defaults to `vertical` for
   `scrollbar`.
 - Natural language direction is determined by the computed value of `dir` which usualy computes to
   to `ltr` (`auto` in most contexts resolves to `ltr`), but can be set to `rtl` for languages such
@@ -325,13 +328,12 @@ Only send these deprecated properties if the user agent would normally send them
 
 Note: These event property tables are intended to assist implementors during the incubation process. This is not intended as a normative specification.
 
+### Abandoned: New InputEvent types
 
-#### Speculative: New InputEvent types
-
-Note: This section is speculative, as there is now no immediate plan to include InputEvents
+Note: This section is abandoned, as there is now no immediate plan to include InputEvents
 for Assistive Technology Actions.
 
-We will also add some new [`InputEvent`](https://www.w3.org/TR/uievents/#inputevent) types:
+We considered also adding some new [`InputEvent`](https://www.w3.org/TR/uievents/#inputevent) types:
 
 - `increment`
 - `decrement`
@@ -339,7 +341,7 @@ We will also add some new [`InputEvent`](https://www.w3.org/TR/uievents/#inputev
 - `scrollPageUp`
 - `scrollPageDown`
 
-These will be triggered via assistive technology events,
+These could have been be triggered via assistive technology events,
 along with the synthesised keyboard events listed in the above table,
 and also synthesised when the keyboard events listed above
 occur in the context of a valid target for the corresponding assistive technology event.
@@ -355,7 +357,9 @@ a `<input type="range">` _or_ an element with a role of `slider`
 an `input` event with a type of `increment` will be fired at the focused element
 along with the keypress sequence.
 
-#### Use case 3: Listening for events from Assistive Technology
+#### Abandoned Use case 3: Listening for events from Assistive Technology
+
+Note: This section is abandoned, as there is now no immediate plan to implement specific, direct events from Assistive Technology, but see earlier section, **User action events from Assistive Technology** for indirect events.
 
 For example:
 
@@ -409,12 +413,14 @@ customSlider.addEventListener('keydown', (event) => {
 
 Not yet specced or implemented anywhere.
 
-### Virtual Accessibility Nodes
+### Speculative, Blocked: Virtual Accessibility Nodes
 
 Important note: At this point, due to a number of complications including
 privacy concerns, the working group is not pursuing virtual nodes as
 intended. Instead, the goal is to focus on alternate solutions to valid
 use-cases.
+
+See: https://github.com/w3ctag/design-principles/issues/293
 
 Original idea: **Virtual Accessibility Nodes** would allow authors
 to expose "virtual" accessibility nodes,
@@ -514,6 +520,8 @@ Adding a permission dialog might help if virtual nodes were only truly
 needed on a small number of specialized websites, but that would
 preclude their use in any widget library.
 
+See: https://github.com/w3ctag/design-principles/issues/293
+
 #### Current thinking
 
 To avoid privacy concerns, the most likely path forwards for custom-drawn
@@ -529,22 +537,22 @@ with efforts to address weaknesses in this approach, such as:
 
 Not yet specced or implemented anywhere.
 
-### Full Introspection of an Accessibility Tree - `ComputedAccessibleNode`
+### Full Introspection of an Accessibility Tree
 
-This API is still being considered.
+This functionality is still being considered as part of [Issue #197](https://github.com/WICG/aom/issues/197) but it is highly unlikely to land in a format similar to the API proposed below.
 
 It may be approached initially as a testing-only API.
 
-#### Use case 5: Introspecting the computed tree
+#### Use case 5: Introspecting the computed accessibility tree and interpreted accessibility attributes/properties
 
 The **Computed Accessibility Tree** API will allow authors to access
 the full computed accessibility tree -
 all computed properties for the accessibility node associated with each DOM element,
-plus the ability to walk the computed tree structure including virtual nodes.
+plus the ability to walk the computed tree structure.
 
-This will make it possible to:
+This could make it possible to:
 
-- write any programmatic test which asserts anything
+- write a programmatic interoperability test which asserts anything
   about the semantic properties of an element or a page.
 - build a reliable browser-based assistive technology -
   for example, a browser extension which uses the accessibility tree
@@ -555,13 +563,24 @@ This will make it possible to:
   (via ARIA or otherwise)
   to an element -
   for example, to detect whether a browser has implemented a particular version of ARIA.
-- do any kind of console-based debugging/checking of accessibility tree issues.
+- perform debugging/checking of accessibility tree issues.
 - react to accessibility tree state,
   for example, detecting the exposed role of an element
   and modifying the accessible help text to suit.
 
 #### Spec/implementation status
 
+##### WebDriver (Shipping in WebKit/Chromium/Gecko)
+ - [computedrole](https://www.w3.org/TR/webdriver/#dfn-get-computed-role)
+ - [computedlabel](https://www.w3.org/TR/webdriver/#dfn-get-computed-label)
+ - Some discussion of [getting a backing accessibility reference (and parent/children) for tree access](https://github.com/WICG/aom/issues/197)
+ 
+##### WPT TestDriver (functional as of March 2023)
+Leverages WebDriver accessors for ease of test development.
+ - [WPT Interop 2023 Accessibility Investigation](https://github.com/web-platform-tests/interop-2023-accessibility-testing/issues/3)
+ - [WPT accessibility tests](https://wpt.fyi/results/?label=master&label=experimental&aligned&q=label%3Aaccessibility)
+ 
+##### Legacy and abondoned implementations
 A purely experimental implementation exists in Blink,
 via the command-line flag `--enable-blink-features="AccessibilityObjectModel"`.
 
@@ -569,6 +588,9 @@ This adds a method to `Window`, `getComputedAccessibleNode(node)`,
 which returns the computed accessible properties for the given node.
 
 This implementation is not reliable and may be removed at any point.
+
+The similar experimental implementation in WebKit is scheduled to be removed.
+
 
 #### Why is accessing the computed properties being addressed last?
 
@@ -642,6 +664,8 @@ However, as discussions progressed it became clear that there were some issues w
 These issues prompted a reassessment,
 and a simplification of the API based around the original set of use cases
 we were committed to addressing.
+
+[Update: April 2023] Similar functionality is being reconsidered as a test-only API in [Issue #197](https://github.com/WICG/aom/issues/197)
 
 ## Next Steps
 
@@ -909,7 +933,7 @@ partial interface Element {
 }
 ```
 
-## Appendix: partial proposed IDL for `ComputedAccessibleNode`
+## Abandoned: Appendix: partial proposed IDL for `ComputedAccessibleNode`
 
 ```idl
 interface ComputedAccessibleNode {
